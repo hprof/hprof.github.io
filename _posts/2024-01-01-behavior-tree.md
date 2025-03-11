@@ -3,7 +3,7 @@ layout: post
 
 title: 项目中的行为树
 
-permalink: none
+permalink: behavior-tree
 
 ---
 
