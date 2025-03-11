@@ -3,6 +3,8 @@ layout: post
 
 title: 项目中的行为树
 
+permalink: none
+
 ---
 
 # 项目中的行为树
