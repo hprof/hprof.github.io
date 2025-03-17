@@ -170,7 +170,7 @@ excerpt: 本文探讨行为树（Behavior Tree）在项目中的实现. 从传�
 
 例如, 现在有一个怪物在玩家没有进入视野时暂停运行, 在玩家进入视野时开始巡逻, 在玩家攻击时开始战斗, 在玩家逃离时开始回巢. 我们可以配置IDLE, PATROL, FIGHT, HOME四个状态. 在怪物出生时处于IDLE状态, 状态内没有任何节点, 当接收到PATROL所监听的玩家进入视野事件时, 切换并执行巡逻树, 当接收到FIGHT所监听的受击事件时切换并执行战斗树, 接收到HOME所监听的实体坐标变化事件时需要判断自己与敌对实体的位置, 若大于指定距离则切换并执行回巢树, 直到玩家离开视野又回到IDLE状态.
 
-```mermaid
+<div class="mermaid">
 stateDiagram-v2
     [*] --> IDLE : 怪物出生
     IDLE --> PATROL : 玩家进入视野
@@ -189,7 +189,7 @@ stateDiagram-v2
     note right of HOME
         执行回巢树
     end note
-```
+</div>
 
 这样同时也解决了上文中提到的暂停恢复行为树后从根节点出发出现的固定节点切换问题.
 
@@ -205,7 +205,7 @@ stateDiagram-v2
 
 根据以上两个场景, 我们可以确定配置的形式:
 
-```mermaid
+<div class="mermaid">
 classDiagram
     class Monster {
         -String name
@@ -223,7 +223,7 @@ classDiagram
     Monster o--> "many" State : 包含
     State --> "1" BehaviorTree : 关联
     State --> "1" Blackboard : 拥有初始值
-```
+</div>
 
 其中, 怪物的配置不直接关联行为树, 而是通过多个状态来组合. 每个状态对应一个行为树, 行为树内的节点使用的参数最好不要在节点内直接写死, 而是尽量引用在状态内的初始黑板值. 这样提高了行为树的复用率.
 
