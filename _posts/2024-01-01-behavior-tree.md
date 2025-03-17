@@ -3,13 +3,10 @@ layout: post
 
 title: 项目中的行为树
 
-permalink: behavior-tree
 
 ---
 
-本行为树探讨的背景为: 使用Java实现的在服务器上运行的行为树, 游戏类型为MMORPG, 服务器线程模型类似于Actor模型
 
-## 行为树概念
 
 行为树是一种控制游戏角色行为的树形结构, 其工作方式为: 由根节点出发, 由上到下, 由左至右, 通过一系列决策节点到达相应的叶子节点, 由叶子节点驱动游戏角色执行相应的行为. 
 
@@ -23,7 +20,7 @@ permalink: behavior-tree
 
 每个节点可以配置参数读取, 每个节点执行完都会返回 success 或 fail 两种执行结果
 
-
+<img title="" src="{{ site.baseurl }}/images/behavior-tree.png" alt="" data-align="inline">
 
 接下来详细介绍三种类型节点:
 
@@ -35,19 +32,19 @@ permalink: behavior-tree
 
 由左到右依次执行子节点, 所有节点执行成功则返回成功, 若出现执行失败的子节点则直接返回失败, 剩余子节点则被"短路". 子节点的关系相当于"与"的关系.
 
-![](https://img2018.cnblogs.com/blog/1409576/201812/1409576-20181204084648191-1202113135.png)
+![]({{%20site.baseurl%20}}/images/sequence.png)
 
 ##### 选择节点(Selector)
 
 由左到右依次执行子节点, 当遇到第一个执行成功的子节点则直接返回成功, 剩余子节点则被"短路", 若所有子节点执行失败则返回失败. 子节点的关系相对于"或"的关系.
 
-![](https://img2018.cnblogs.com/blog/1409576/201812/1409576-20181204084642128-630857633.png)
+![]({{%20site.baseurl%20}}/images/selector.png)
 
 ##### 并行节点(Parallel)
 
 并行执行所有子节点, 可通过配置参数来控制结果的复合. 例如当配置"any"时, 则遇到第一个执行成功的子节点时则返回成功, 配置"all"时, 则需要等待所有子节点返回成功才能返回成功.
 
-![bv-tree-pal](http://aisharing.com/wp/wp-content/uploads/2011/07/wKgKDE4u2aoAAAAAAAANtDqseeg797.png)
+![bv-tree-pal]({{%20site.baseurl%20}}/images/parallel.png)
 
 以上是三种最基础的复合节点, 此外还可以在这三种节点基础之上添加一些自定义的控制功能, 例如:
 
@@ -67,7 +64,7 @@ permalink: behavior-tree
 
 多个装饰节点可以嵌套, 例如可以在一个节点上叠加多个条件节点来实现多条件判断:
 
-
+![]({{%20site.baseurl%20}}/images/decorator.png)
 
 下面举例几种常见节点:
 
@@ -137,7 +134,7 @@ permalink: behavior-tree
 
 以下图举例, 假设一个怪向一个目标发动攻击, 在距离不够的时候需要向目标移动. 在向目标移动过程中, "是否大于攻击距离"会监听实体移动的事件, 当接收到实体移动事件且判断条件失败时会打断子节点, 然后经过"必定成功"返回 success 到"顺序执行"节点, 最后执行"释放技能"节点
 
-
+![]({{%20site.baseurl%20}}/images/inner-interrupt.png)
 
 条件中断主要用于响应行为树内部和外部的属性变化. 当一棵树有多个条件节点注册了同一事件时, 应按照由上至下, 由左至右的顺序进行打断.
 
@@ -175,6 +172,88 @@ permalink: behavior-tree
 
 例如, 现在有一个怪物在玩家没有进入视野时暂停运行, 在玩家进入视野时开始巡逻, 在玩家攻击时开始战斗, 在玩家逃离时开始回巢. 我们可以配置IDLE, PATROL, FIGHT, HOME四个状态. 在怪物出生时处于IDLE状态, 状态内没有任何节点, 当接收到PATROL所监听的玩家进入视野事件时, 切换并执行巡逻树, 当接收到FIGHT所监听的受击事件时切换并执行战斗树, 接收到HOME所监听的实体坐标变化事件时需要判断自己与敌对实体的位置, 若大于指定距离则切换并执行回巢树, 直到玩家离开视野又回到IDLE状态.
 
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE : 怪物出生
+    IDLE --> PATROL : 玩家进入视野
+    PATROL --> FIGHT : 受到玩家攻击
+    FIGHT --> HOME : 玩家逃离\n(距离 > 指定值)
+    HOME --> IDLE : 玩家离开视野
+    note right of IDLE
+        无行为节点
+    end note
+    note right of PATROL
+        执行巡逻树
+    end note
+    note right of FIGHT
+        执行战斗树
+    end note
+    note right of HOME
+        执行回巢树
+    end note
+```
+
 这样同时也解决了上文中提到的暂停恢复行为树后从根节点出发出现的固定节点切换问题.
 
 另外在群体AI中, 这个设计还带来了额外的好处, 实体控制器可以动态地将多个怪设置不同的状态来对怪物进行分组, 例如在多个怪物与玩家战斗时, 可以将部分怪设置成战斗状态与玩家战斗, 部分怪设置成奶妈状态为其他怪回血, 部分怪设置成警戒状态在战斗外围与玩家对峙. 这样既避免了怪物一窝蜂的冲向玩家, 提升了玩家体验, 其次避免了大量的怪物同时运行复杂的战斗任务, 优化了性能.
+
+## 行为树实现
+
+在实现行为树前, 我们先通过实际场景来确定配置的形式和之间的关系
+
+场景1: 游戏场景内有多个怪物共享一套行为树, 有些怪物相对于其他怪物在某些节点的参数不同
+
+场景2: 有些BOSS的行为可以分成多个阶段, 每个阶段都能展开一颗庞大的树, 而策划的工作流是由多个战斗小组并行开发多个阶段行为
+
+根据以上两个场景, 我们可以确定配置的形式:
+
+```mermaid
+classDiagram
+    class Monster {
+        -String name
+    }
+    class State {
+        -String stateName
+        -Blackboard initialBlackboard
+    }
+    class BehaviorTree {
+        -String treeName
+    }
+    class Blackboard {
+        -Map<String, Object> values
+    }
+    Monster o--> "many" State : 包含
+    State --> "1" BehaviorTree : 关联
+    State --> "1" Blackboard : 拥有初始值
+```
+
+其中, 怪物的配置不直接关联行为树, 而是通过多个状态来组合. 每个状态对应一个行为树, 行为树内的节点使用的参数最好不要在节点内直接写死, 而是尽量引用在状态内的初始黑板值. 这样提高了行为树的复用率.
+
+另外, 在早期还使用过"子树"的动作节点来解决行为树的复用问题, 该动作节点的参数为子树的树名, 在构造时会读取子树数据, 以父树的子树节点作为子树的根节点, 展平到父树上.
+
+行为树的配置可以通过图形化的配置生成器生成, 并导出yaml或json格式, 然后由服务器进行读取解析. 配置生成器可以保存一些预设模板来加速配置.
+
+行为树在内存中仅保留一份实例, 在初始化怪物时, 怪物身上会挂一个行为树组件, 其中包含了怪物的状态机, 状态机对于行为树的引用和怪物自己的黑板map. 在运行时, 通过给节点传入行为树组件的方式来修改怪物身上行为树的状态.
+
+```java
+public class Attack extends BTNode.Action {
+    private final String skill;
+
+    public Attack(BehaviorTree tree, JSONObject params) {
+        super(tree);
+        this.skill = params.getString("skill");
+    }
+
+    @Override
+    protected boolean logic(BTComponent component) throws Exception {
+        // 若参数引用了黑板值, 则从黑板系统获取, 否则直接读取
+        String skill = this.skill.startsWith("&")
+                ? (String) component.getBBEntry(this.skill.substring(1))
+                : this.skill;
+        // 模拟调用战斗系统
+        System.out.println(component.host + "attacking with skill" + skill);
+        Thread.sleep(3000L);
+        return true;
+    }
+}
+```
