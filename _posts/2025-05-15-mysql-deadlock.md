@@ -1,7 +1,7 @@
 ---
 layout: post
 title: 记一次 MySQL 死锁故障及解决方案
-excerpt: 由 SELECT...FOR UPDATE 引起的死锁故障
+excerpt:  由 SELECT...FOR UPDATE 引起的死锁故障
 ---
 
 ### 功能背景
